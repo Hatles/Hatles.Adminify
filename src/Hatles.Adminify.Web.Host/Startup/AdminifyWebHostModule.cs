@@ -4,6 +4,8 @@ using Microsoft.Extensions.Configuration;
 using Abp.Modules;
 using Abp.Reflection.Extensions;
 using Hatles.Adminify.Configuration;
+using Hatles.Adminify.DynamicEntities;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
 
 namespace Hatles.Adminify.Web.Host.Startup
 {
@@ -23,6 +25,11 @@ namespace Hatles.Adminify.Web.Host.Startup
         public override void Initialize()
         {
             IocManager.RegisterAssemblyByConvention(typeof(AdminifyWebHostModule).GetAssembly());
+            
+            //Add feature providers
+            var partManager = IocManager.Resolve<ApplicationPartManager>();
+            var dynamicEntityManager = IocManager.Resolve<DynamicEntityManager>();
+            partManager?.FeatureProviders.Add(new DynamicAppServiceControllerFeatureProvider(dynamicEntityManager));
         }
     }
 }

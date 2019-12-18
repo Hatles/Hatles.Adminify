@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Abp.Application.Services.Dto;
 using Abp.AutoMapper;
 using Abp.Dependency;
 using Abp.Domain.Entities;
@@ -21,6 +22,16 @@ namespace Hatles.Adminify
         public override void PreInitialize()
         {
             Configuration.Authorization.Providers.Add<AdminifyAuthorizationProvider>();
+            Configuration.Modules.AbpAutoMapper().Configurators.Add(config =>
+            {
+                using (IScopedIocResolver scope = IocManager.CreateScope())
+                {
+                    Logger.Debug("Registering dynamic app mappings");
+                    
+                    var entityManager = scope.Resolve<DynamicEntityManager>();
+                    config.CreateMap(entityManager.DynamicType, entityManager.DynamicDtoType).ReverseMap();
+                }
+            });;
         }
 
         public override void Initialize()
@@ -35,12 +46,20 @@ namespace Hatles.Adminify
 
                 var entityDtos = thisAssembly.GetTypes()
                     .Where(t => t.GetCustomAttributes(typeof(DynamicEntityDtoAttribute), true).Length == 1).Select(t => (dto: t, attribute: (DynamicEntityDtoAttribute) t.GetCustomAttributes(typeof(DynamicEntityDtoAttribute)).Single())).ToList();
-                var entityInfos = scope.Resolve<DynamicEntityManager>().GetDynamicEntityInfos();
+                var entityManager = scope.Resolve<DynamicEntityManager>();
+                var entityInfos = entityManager.GetDynamicEntityInfos();
             
                 foreach (var entityInfo in entityInfos)
                 {
-                    var entityDto = entityDtos.Single(e => e.attribute.TargetTypes.Any(t => t == entityInfo.EntityType));
-                    RegisterEntityTypeForAppService(IocManager, entityInfo, entityDto.dto, AppServiceTypes.Default);
+                    try
+                    {
+                        var entityDto = entityDtos.Single(e => e.attribute.TargetTypes.Any(t => t == entityInfo.EntityType));
+                        RegisterEntityTypeForAppService(IocManager, entityInfo, entityDto.dto, AppServiceTypes.Default);
+                    }
+                    catch (Exception e)
+                    {
+                        RegisterEntityTypeForAppService(IocManager, entityInfo, entityManager.DynamicDtoType, AppServiceTypes.Default);
+                    }
                 }
             }
 

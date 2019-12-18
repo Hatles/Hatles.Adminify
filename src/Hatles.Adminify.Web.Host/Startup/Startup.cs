@@ -81,6 +81,7 @@ namespace Hatles.Adminify.Web.Host.Startup
             {
                 options.SwaggerDoc("v1", new OpenApiInfo() { Title = "Adminify API", Version = "v1" });
                 options.DocInclusionPredicate((docName, description) => true);
+                options.TagActionsBy(api => api.GroupName);
 
                 // Define the BearerAuth scheme that's in use
                 options.AddSecurityDefinition("bearerAuth", new OpenApiSecurityScheme()
@@ -91,18 +92,16 @@ namespace Hatles.Adminify.Web.Host.Startup
                     Type = SecuritySchemeType.ApiKey
                 });
             });
-
-            //Add feature providers
-            var partManager = services.GetSingletonServiceOrNull<ApplicationPartManager>();
-            partManager?.FeatureProviders.Add(new DynamicAppServiceControllerFeatureProvider());
             
             // Configure Abp and Dependency Injection
-            return services.AddAbp<AdminifyWebHostModule>(
+            var compiledServiceProvider = services.AddAbp<AdminifyWebHostModule>(
                 // Configure Log4Net logging
                 options => options.IocManager.IocContainer.AddFacility<LoggingFacility>(
                     f => f.UseAbpLog4Net().WithConfig("log4net.config")
                 )
             );
+
+            return compiledServiceProvider;
         }
 
         public void Configure(IApplicationBuilder app,  ILoggerFactory loggerFactory)

@@ -4,13 +4,12 @@ using Abp.Application.Services;
 using Abp.Application.Services.Dto;
 using Abp.Domain.Entities;
 using Abp.Domain.Repositories;
-using Hatles.Adminify.Entities.Dtos;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hatles.Adminify.DynamicEntities
 {
     public class AdminifyAsyncCrudAppService<TEntity, TEntityDto>
-        : AdminifyAsyncCrudAppService<TEntity, TEntityDto, int>
+        : AdminifyAsyncCrudAppService<TEntity, TEntityDto, int>, IDynamicEntityService<TEntity>
         where TEntity : class, IEntity<int>
         where TEntityDto : IEntityDto<int>
     {
@@ -34,7 +33,7 @@ namespace Hatles.Adminify.DynamicEntities
     }
 
     public class AdminifyAsyncCrudAppService<TEntity, TEntityDto, TPrimaryKey>
-        : AsyncCrudAppService<TEntity, TEntityDto, TPrimaryKey>
+        : AsyncCrudAppService<TEntity, TEntityDto, TPrimaryKey>, IDynamicEntityService<TEntity, TPrimaryKey>
         where TEntity : class, IEntity<TPrimaryKey>
         where TEntityDto : IEntityDto<TPrimaryKey>
     {

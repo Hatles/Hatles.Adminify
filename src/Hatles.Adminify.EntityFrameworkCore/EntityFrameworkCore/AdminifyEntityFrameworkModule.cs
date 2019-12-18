@@ -12,6 +12,9 @@ using Hatles.Adminify.EntityFrameworkCore.Seed;
 using Castle.MicroKernel.Registration;
 using Hatles.Adminify.DynamicEntities;
 using Hatles.Adminify.EntityFrameworkCore.DynamicEntities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Hatles.Adminify.EntityFrameworkCore
 {

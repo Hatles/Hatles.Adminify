@@ -34,10 +34,34 @@ namespace Hatles.Adminify.EntityFrameworkCore.DynamicEntities
             
             foreach (var entityInfo in entityInfos)
             {
-                AddConfiguration(modelBuilder, addMethod, entityInfo.EntityType);
+                if (entityInfo.EntityConfigurationType == null)
+                {
+                    AddEntity(modelBuilder, entityInfo.EntityType);
+                }
+                else
+                {
+                    AddConfiguration(modelBuilder, addMethod, entityInfo.EntityConfigurationType);
+                }
             }
 
+            AddEntity(modelBuilder, _dynamicEntityManager.DynamicType);
+
             base.OnModelCreating(modelBuilder);
+        }
+        
+        public static ModelBuilder AddEntity(ModelBuilder modelBuilder, Type entityType)
+        {
+            modelBuilder.Entity(entityType);
+
+            return modelBuilder;
+        }
+        
+        public static ModelBuilder AddConfiguration(ModelBuilder modelBuilder, MethodInfo addMethod, Type entityType, Type configurationType)
+        {
+            addMethod.MakeGenericMethod(entityType, configurationType)
+                .Invoke(null, new object[]{ modelBuilder });
+
+            return modelBuilder;
         }
         
         public static ModelBuilder AddConfiguration(ModelBuilder modelBuilder, MethodInfo addMethod, Type configurationType)
@@ -45,10 +69,7 @@ namespace Hatles.Adminify.EntityFrameworkCore.DynamicEntities
             var interfaceType = configurationType.GetInterface(typeof(IEntityTypeConfiguration<>).Name);
             var entityType = interfaceType.GetGenericArguments().Single();
 
-            addMethod.MakeGenericMethod(entityType, configurationType)
-                .Invoke(null, new object[]{ modelBuilder });
-
-            return modelBuilder;
+            return AddConfiguration(modelBuilder, addMethod, entityType, configurationType);
         }
         
         public static ModelBuilder AddConfiguration<TEntity, TEntityConfiguration>(ModelBuilder modelBuilder)

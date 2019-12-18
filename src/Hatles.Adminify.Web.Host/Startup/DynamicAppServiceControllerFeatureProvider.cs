@@ -14,8 +14,11 @@ namespace Hatles.Adminify.Web.Host.Startup
 {
     public class DynamicAppServiceControllerFeatureProvider : IApplicationFeatureProvider<ControllerFeature>
     {
-        public DynamicAppServiceControllerFeatureProvider()
+        private readonly DynamicEntityManager _dynamicEntityManager;
+
+        public DynamicAppServiceControllerFeatureProvider(DynamicEntityManager dynamicEntityManager)
         {
+            _dynamicEntityManager = dynamicEntityManager;
         }
 
         protected bool IsController(TypeInfo typeInfo)
@@ -47,12 +50,19 @@ namespace Hatles.Adminify.Web.Host.Startup
             var entityDtos = thisAssembly.GetTypes()
                 .Where(t => t.GetCustomAttributes(typeof(DynamicEntityDtoAttribute), true).Length == 1).Select(t => (dto: t, attribute: (DynamicEntityDtoAttribute) t.GetCustomAttributes(typeof(DynamicEntityDtoAttribute)).Single())).ToList();
 
-            var entityInfos = DynamicEntityRegistrar.GetDynamicEntityInfos();
+            var entityInfos = _dynamicEntityManager.GetDynamicEntityInfos();
             
             foreach (var entityInfo in entityInfos)
             {
-                var entityDto = entityDtos.Single(e => e.attribute.TargetTypes.Any(t => t == entityInfo.EntityType));
-                RegisterEntityTypeAsController(feature, entityInfo, entityDto.dto, AppServiceTypes.Default);
+                try
+                {
+                    var entityDto = entityDtos.Single(e => e.attribute.TargetTypes.Any(t => t == entityInfo.EntityType));
+                    RegisterEntityTypeAsController(feature, entityInfo, entityDto.dto, AppServiceTypes.Default);
+                }
+                catch (Exception e)
+                {
+                    RegisterEntityTypeAsController(feature, entityInfo, _dynamicEntityManager.DynamicDtoType, AppServiceTypes.Default);
+                }
             }
         }
         
